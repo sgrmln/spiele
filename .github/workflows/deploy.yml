@@ -15,10 +15,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Generate config.js
+- name: Inject Supabase credentials
         run: |
-          echo "const SUPABASE_URL = '${{ secrets.SUPABASE_URL }}';" > config.js
-          echo "const SUPABASE_ANON_KEY = '${{ secrets.SUPABASE_ANON_KEY }}';" >> config.js
+          sed -i "s|\${{ secrets.SUPABASE_URL }}|${{ secrets.SUPABASE_URL }}|g" index.html
+          sed -i "s|\${{ secrets.SUPABASE_ANON_KEY }}|${{ secrets.SUPABASE_ANON_KEY }}|g" index.html
 
       - name: Verify config.js
         run: cat config.js
