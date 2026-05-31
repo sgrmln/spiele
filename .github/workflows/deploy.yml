@@ -17,14 +17,12 @@ jobs:
 
       - name: Generate config.js from Secrets
         run: |
-          cat > config.js << EOF
-          const SUPABASE_URL = '${{ secrets.SUPABASE_URL }}';
-          const SUPABASE_ANON_KEY = '${{ secrets.SUPABASE_ANON_KEY }}';
-          EOF
+          echo "const SUPABASE_URL = '${{ secrets.SUPABASE_URL }}';" > config.js
+          echo "const SUPABASE_ANON_KEY = '${{ secrets.SUPABASE_ANON_KEY }}';" >> config.js
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: .
-          exclude_assets: '.github,config.js'
+          exclude_assets: '.github'
