@@ -16,9 +16,13 @@ jobs:
         uses: actions/checkout@v4
 
 - name: Inject Supabase credentials
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          sed -i "s|\${{ secrets.SUPABASE_URL }}|${{ secrets.SUPABASE_URL }}|g" index.html
-          sed -i "s|\${{ secrets.SUPABASE_ANON_KEY }}|${{ secrets.SUPABASE_ANON_KEY }}|g" index.html
+          sed -i "s|SUPABASE_URL_PLACEHOLDER|${SUPABASE_URL}|g" index.html
+          sed -i "s|SUPABASE_ANON_KEY_PLACEHOLDER|${SUPABASE_ANON_KEY}|g" index.html
+          
 
       - name: Verify config.js
         run: cat config.js
