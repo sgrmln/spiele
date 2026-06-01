@@ -1,20 +1,16 @@
 // ============================================================
 //  Spielesammlung – app.js
-//  Supabase Backend + BGG Cover via Edge Function
+//  Supabase Backend, keine Cover-Bilder
 // ============================================================
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Cover cache
-const imgCache = {};
-
-// STATE
 let games = [];
 let activeViewFilter = 'alle';
 let activeGenre = '';
 let activeTyp = '';
 let activeVerlag = '';
-let layout = 'grid';
+let layout = 'list';
 let currentGameId = null;
 let editingId = null;
 
@@ -24,39 +20,6 @@ function setSyncStatus(state) {
   const lbl = document.getElementById('sync-label');
   dot.className = 'sync-dot' + (state === 'syncing' ? ' syncing' : state === 'error' ? ' error' : '');
   lbl.textContent = state === 'syncing' ? 'Speichert…' : state === 'error' ? 'Fehler' : 'Verbunden';
-}
-
-// ── BGG COVER via Supabase Edge Function ─────────────────────
-async function getBGGImage(gameId, name) {
-  // 1. Memory cache
-  if (imgCache[gameId] !== undefined) return imgCache[gameId];
-  // 2. SessionStorage cache
-  const cached = sessionStorage.getItem('cover_' + gameId);
-  if (cached !== null) { imgCache[gameId] = cached || null; return imgCache[gameId]; }
-  // 3. Already in game data
-  const g = games.find(x => x.id === gameId);
-  if (g && g.cover_url) { imgCache[gameId] = g.cover_url; return g.cover_url; }
-  // 4. Call Edge Function
-  try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/bgg-cover`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-      },
-      body: JSON.stringify({ name: name, id: gameId })
-    });
-    if (!res.ok) { imgCache[gameId] = null; return null; }
-    const data = await res.json();
-    const url = data.url || null;
-    imgCache[gameId] = url;
-    try { sessionStorage.setItem('cover_' + gameId, url || ''); } catch(e) {}
-    if (url && g) g.cover_url = url;
-    return url;
-  } catch(e) {
-    imgCache[gameId] = null;
-    return null;
-  }
 }
 
 // ── LOAD ─────────────────────────────────────────────────────
@@ -173,43 +136,16 @@ function typBadge(typ) {
   return `<span class="tag erw-tag">Erw.</span>`;
 }
 
-// ── COVER HTML ────────────────────────────────────────────────
-function coverHTML(g, size) {
-  const url = imgCache[g.id] !== undefined ? imgCache[g.id] : (g.cover_url || null);
-  if (url) {
-    if (size === 'row') return `<div class="row-cover-wrap"><img class="row-cover" src="${url}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'row-cover-placeholder\\'>🎲</div>'"></div>`;
-    return `<div class="card-cover-wrap"><img class="card-cover" src="${url}" alt="" loading="lazy"></div>`;
-  }
-  const spinner = `<div class="cover-spinner"></div>`;
-  if (size === 'row') return `<div class="row-cover-wrap" id="cv-${g.id}"><div class="row-cover-loading">${spinner}</div></div>`;
-  return `<div class="card-cover-wrap" id="cv-${g.id}"><div class="card-cover-loading">${spinner}</div></div>`;
-}
-
-async function loadCoverEl(g, size) {
-  const el = document.getElementById(`cv-${g.id}`);
-  if (!el) return;
-  const url = await getBGGImage(g.id, g.name);
-  const current = document.getElementById(`cv-${g.id}`);
-  if (!current) return;
-  if (url) {
-    if (size === 'row') current.innerHTML = `<img class="row-cover" src="${url}" alt="" loading="lazy" onerror="this.style.display='none'">`;
-    else current.innerHTML = `<img class="card-cover" src="${url}" alt="" loading="lazy">`;
-  } else {
-    if (size === 'row') current.innerHTML = `<div class="row-cover-placeholder">🎲</div>`;
-    else current.innerHTML = `<div class="card-cover-placeholder">🎲</div>`;
-  }
-}
-
 // ── RENDER ────────────────────────────────────────────────────
 function rowHTML(g) {
   const bgg = g.bgg_rating ? `<span class="row-bgg">★ ${parseFloat(g.bgg_rating).toFixed(1)}</span>` : '';
   return `<div class="game-row${g.favorit?' favorit':''}" onclick="openPanel(${g.id})">
-    ${coverHTML(g, 'row')}
     <div class="row-info">
       <div class="row-title">${g.name}</div>
       <div class="row-sub">
         <span>${g.verlag||''}</span>
         ${g.serie ? `<span class="dot">·</span><span>${g.serie}</span>` : ''}
+        ${g.jahr ? `<span class="dot">·</span><span>${g.jahr}</span>` : ''}
       </div>
     </div>
     <div class="row-tags">${genreBadge(g.genre)}${typBadge(g.typ)}</div>
@@ -222,13 +158,18 @@ function rowHTML(g) {
 }
 
 function cardHTML(g) {
+  const initial = g.name.charAt(0).toUpperCase();
+  const colors = ['#dbeafe','#dcfce7','#fef9c3','#fce7f3','#ede9fe','#ffedd5','#e0f2fe'];
+  const bg = colors[g.id % colors.length];
   const bgg = g.bgg_rating ? `<div style="font-size:10px;color:var(--amber);font-weight:600;margin-top:4px">★ ${parseFloat(g.bgg_rating).toFixed(1)}</div>` : '';
   return `<div class="game-card${g.favorit?' favorit':''}" onclick="openPanel(${g.id})">
     <div class="card-icons">
       <button class="icon-btn${g.favorit?' active-fav':''}" onclick="event.stopPropagation();toggleFav(${g.id})">★</button>
       <button class="icon-btn${g.gespielt?' active-played':''}" onclick="event.stopPropagation();togglePlayed(${g.id})">✓</button>
     </div>
-    ${coverHTML(g, 'card')}
+    <div class="card-cover-wrap" style="background:${bg};display:flex;align-items:center;justify-content:center">
+      <span style="font-size:42px;font-weight:700;color:rgba(0,0,0,0.15);font-family:'Instrument Serif',serif">${initial}</span>
+    </div>
     <div class="card-body">
       <div class="card-title">${g.name}</div>
       <div class="card-meta">${genreBadge(g.genre)}${typBadge(g.typ)}</div>
@@ -242,8 +183,6 @@ function renderGames(data) {
   const el = document.getElementById('game-container');
   document.getElementById('view-label').textContent = `${data.length} Spiel${data.length!==1?'e':''}`;
   if (!data.length) { el.innerHTML = `<div class="empty">Keine Spiele gefunden.</div>`; return; }
-
-  const size = layout === 'grid' ? 'card' : 'row';
 
   if (layout === 'list') {
     el.innerHTML = `<div class="game-list">${data.map(rowHTML).join('')}</div>`;
@@ -263,43 +202,26 @@ function renderGames(data) {
     }
     el.innerHTML = html;
   }
-
-  // Lazy load covers — only those without cached URL
-  const needsLoad = data.filter(g => !g.cover_url && imgCache[g.id] === undefined);
-  let idx = 0;
-  function loadBatch() {
-    const batch = needsLoad.slice(idx, idx + 5);
-    if (!batch.length) return;
-    idx += 5;
-    Promise.all(batch.map(g => loadCoverEl(g, size))).then(() => {
-      setTimeout(loadBatch, 300);
-    });
-  }
-  setTimeout(loadBatch, 100);
 }
 
 // ── DETAIL PANEL ─────────────────────────────────────────────
-async function openPanel(id) {
+function openPanel(id) {
   currentGameId = id;
   const g = games.find(x=>x.id===id);
   if (!g) return;
+
+  // Initial letter placeholder
+  const initial = g.name.charAt(0).toUpperCase();
+  const colors = ['#dbeafe','#dcfce7','#fef9c3','#fce7f3','#ede9fe','#ffedd5','#e0f2fe'];
+  const bg = colors[g.id % colors.length];
+  const coverWrap = document.getElementById('dp-cover-wrap');
+  coverWrap.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:${bg}"><span style="font-size:80px;font-weight:700;color:rgba(0,0,0,0.12);font-family:'Instrument Serif',serif">${initial}</span></div>`;
+
   document.getElementById('dp-title').textContent = g.name;
   document.getElementById('dp-fav-btn').innerHTML = g.favorit ? '★ Favorit entfernen' : '☆ Als Favorit';
   document.getElementById('dp-played-btn').innerHTML = g.gespielt ? '✓ Als ungespielt' : '○ Als gespielt';
   document.getElementById('dp-bgg').value = g.bgg_rating || '';
   document.getElementById('dp-notes').value = g.notizen || '';
-
-  // Cover
-  const coverWrap = document.getElementById('dp-cover-wrap');
-  const url = imgCache[g.id] || g.cover_url;
-  if (url) {
-    coverWrap.innerHTML = `<img class="panel-cover" src="${url}" alt="${g.name}">`;
-  } else {
-    coverWrap.innerHTML = `<div class="panel-cover-placeholder">🎲</div>`;
-    getBGGImage(g.id, g.name).then(u => {
-      if (u && currentGameId === id) coverWrap.innerHTML = `<img class="panel-cover" src="${u}" alt="${g.name}">`;
-    });
-  }
 
   const rows = [
     ['Verlag', g.verlag||'–'], ['Serie', g.serie||'–'], ['Jahr', g.jahr||'–'],
@@ -446,7 +368,6 @@ function closeModal(e) {
   editingId = null;
 }
 
-// ── TOAST ────────────────────────────────────────────────────
 function toast(msg, isError=false) {
   const el = document.getElementById('toast');
   el.textContent = msg;
@@ -455,5 +376,4 @@ function toast(msg, isError=false) {
   setTimeout(() => el.classList.remove('show'), 2400);
 }
 
-// ── INIT ─────────────────────────────────────────────────────
 loadGames();
