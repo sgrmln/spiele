@@ -27,26 +27,29 @@ function setSyncStatus(state) {
 }
 
 // ── BGG COVER IMAGE ──────────────────────────────────────────
+const PROXY = 'https://corsproxy.io/?';
+
 async function getBGGImage(name) {
-  if (imgCache[name]) return imgCache[name];
+  if (imgCache[name] !== undefined) return imgCache[name];
   const cached = sessionStorage.getItem('bgg_' + name);
-  if (cached) { imgCache[name] = cached; return cached; }
+  if (cached !== null) { imgCache[name] = cached || null; return imgCache[name]; }
   try {
-    const res = await fetch(`https://boardgamegeek.com/xmlapi2/search?query=${encodeURIComponent(name)}&type=boardgame&exact=1`);
+    // Search exact first
+    const searchUrl = `https://boardgamegeek.com/xmlapi2/search?query=${encodeURIComponent(name)}&type=boardgame&exact=1`;
+    const res = await fetch(PROXY + encodeURIComponent(searchUrl));
     const text = await res.text();
     const parser = new DOMParser();
     const xml = parser.parseFromString(text, 'text/xml');
-    const items = xml.querySelectorAll('item');
+    let items = xml.querySelectorAll('item');
     if (!items.length) {
-      // Try non-exact search
-      const res2 = await fetch(`https://boardgamegeek.com/xmlapi2/search?query=${encodeURIComponent(name)}&type=boardgame`);
+      // Fallback: non-exact search
+      const searchUrl2 = `https://boardgamegeek.com/xmlapi2/search?query=${encodeURIComponent(name)}&type=boardgame`;
+      const res2 = await fetch(PROXY + encodeURIComponent(searchUrl2));
       const text2 = await res2.text();
       const xml2 = parser.parseFromString(text2, 'text/xml');
-      const items2 = xml2.querySelectorAll('item');
-      if (!items2.length) { imgCache[name] = null; return null; }
-      const id = items2[0].getAttribute('id');
-      return await getBGGImageById(id, name);
+      items = xml2.querySelectorAll('item');
     }
+    if (!items.length) { imgCache[name] = null; sessionStorage.setItem('bgg_' + name, ''); return null; }
     const id = items[0].getAttribute('id');
     return await getBGGImageById(id, name);
   } catch(e) { imgCache[name] = null; return null; }
@@ -54,11 +57,12 @@ async function getBGGImage(name) {
 
 async function getBGGImageById(id, name) {
   try {
-    const res = await fetch(`https://boardgamegeek.com/xmlapi2/thing?id=${id}`);
+    const thingUrl = `https://boardgamegeek.com/xmlapi2/thing?id=${id}`;
+    const res = await fetch(PROXY + encodeURIComponent(thingUrl));
     const text = await res.text();
     const xml = new DOMParser().parseFromString(text, 'text/xml');
     const imgEl = xml.querySelector('image');
-    if (!imgEl) { imgCache[name] = null; return null; }
+    if (!imgEl) { imgCache[name] = null; sessionStorage.setItem('bgg_' + name, ''); return null; }
     let url = imgEl.textContent.trim();
     if (url.startsWith('//')) url = 'https:' + url;
     imgCache[name] = url;
