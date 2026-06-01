@@ -1,9 +1,12 @@
 // ============================================================
 //  Spielesammlung – app.js
-//  Supabase Backend: Tabellen "spiele" und "userdata"
+//  Supabase Backend + BGG Cover Images
 // ============================================================
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// BGG image cache (sessionStorage)
+const imgCache = {};
 
 // STATE
 let games = [];
@@ -21,6 +24,47 @@ function setSyncStatus(state) {
   const lbl = document.getElementById('sync-label');
   dot.className = 'sync-dot' + (state === 'syncing' ? ' syncing' : state === 'error' ? ' error' : '');
   lbl.textContent = state === 'syncing' ? 'Speichert…' : state === 'error' ? 'Fehler' : 'Verbunden';
+}
+
+// ── BGG COVER IMAGE ──────────────────────────────────────────
+async function getBGGImage(name) {
+  if (imgCache[name]) return imgCache[name];
+  const cached = sessionStorage.getItem('bgg_' + name);
+  if (cached) { imgCache[name] = cached; return cached; }
+  try {
+    const res = await fetch(`https://boardgamegeek.com/xmlapi2/search?query=${encodeURIComponent(name)}&type=boardgame&exact=1`);
+    const text = await res.text();
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(text, 'text/xml');
+    const items = xml.querySelectorAll('item');
+    if (!items.length) {
+      // Try non-exact search
+      const res2 = await fetch(`https://boardgamegeek.com/xmlapi2/search?query=${encodeURIComponent(name)}&type=boardgame`);
+      const text2 = await res2.text();
+      const xml2 = parser.parseFromString(text2, 'text/xml');
+      const items2 = xml2.querySelectorAll('item');
+      if (!items2.length) { imgCache[name] = null; return null; }
+      const id = items2[0].getAttribute('id');
+      return await getBGGImageById(id, name);
+    }
+    const id = items[0].getAttribute('id');
+    return await getBGGImageById(id, name);
+  } catch(e) { imgCache[name] = null; return null; }
+}
+
+async function getBGGImageById(id, name) {
+  try {
+    const res = await fetch(`https://boardgamegeek.com/xmlapi2/thing?id=${id}`);
+    const text = await res.text();
+    const xml = new DOMParser().parseFromString(text, 'text/xml');
+    const imgEl = xml.querySelector('image');
+    if (!imgEl) { imgCache[name] = null; return null; }
+    let url = imgEl.textContent.trim();
+    if (url.startsWith('//')) url = 'https:' + url;
+    imgCache[name] = url;
+    try { sessionStorage.setItem('bgg_' + name, url); } catch(e) {}
+    return url;
+  } catch(e) { imgCache[name] = null; return null; }
 }
 
 // ── LOAD ─────────────────────────────────────────────────────
@@ -117,10 +161,13 @@ function updateSidebar() {
   renderGroup('verlag-filters', countMap('verlag'), activeVerlag, v => activeVerlag = v);
 }
 
-// ── RENDER ───────────────────────────────────────────────────
+// ── TAGS ─────────────────────────────────────────────────────
 function genreBadge(genre) {
   if (!genre) return '';
-  const cls = genre.includes('Kinder') ? 'kind-tag' : (genre.includes('Experten') || genre.includes('Kenner')) ? 'expert-tag' : 'genre-tag';
+  let cls = 'genre-tag';
+  if (genre.includes('Kinder')) cls = 'kind-tag';
+  else if (genre.includes('Experten') || genre.includes('Kenner')) cls = 'expert-tag';
+  else if (genre.includes('Party') || genre.includes('Quiz')) cls = 'genre-tag';
   const short = genre
     .replace('Kennerspiel / Expertenspiel','Experten')
     .replace('Rätsel / Escape / Detektiv','Escape')
@@ -135,25 +182,55 @@ function typBadge(typ) {
   return `<span class="tag erw-tag">Erw.</span>`;
 }
 
-function cardHTML(g) {
-  const bgg = g.bgg_rating ? `<div class="bgg-badge">★ ${parseFloat(g.bgg_rating).toFixed(1)}</div>` : '';
-  return `<div class="game-card${g.favorit?' favorit':''}" onclick="openPanel(${g.id})">
-    <div class="card-icons">
-      <button class="icon-btn${g.favorit?' active-fav':''}" onclick="event.stopPropagation();toggleFav(${g.id})" title="Favorit">★</button>
-      <button class="icon-btn${g.gespielt?' active-played':''}" onclick="event.stopPropagation();togglePlayed(${g.id})" title="Gespielt">✓</button>
-    </div>
-    <div class="card-title">${g.name}</div>
-    <div class="card-meta">${genreBadge(g.genre)}${typBadge(g.typ)}</div>
-    <div class="card-verlag">${g.verlag||''}${g.serie?' · '+g.serie:''}</div>
-    ${bgg}
-  </div>`;
+// ── COVER IMAGE HTML ─────────────────────────────────────────
+function coverWrapHTML(id, name, size = 'row') {
+  const cached = imgCache[name] || sessionStorage.getItem('bgg_' + name);
+  if (cached) {
+    if (size === 'row') return `<div class="row-cover-wrap"><img class="row-cover" src="${cached}" alt="${name}" onerror="this.style.display='none'"></div>`;
+    return `<div class="card-cover-wrap"><img class="card-cover" src="${cached}" alt="${name}" onerror="this.parentElement.innerHTML='<div class=\\'card-cover-placeholder\\'>🎲</div>'"></div>`;
+  }
+  const spinner = `<div class="cover-spinner"></div>`;
+  if (size === 'row') {
+    return `<div class="row-cover-wrap" id="cover-${id}"><div class="row-cover-loading">${spinner}</div></div>`;
+  }
+  return `<div class="card-cover-wrap" id="cover-${id}"><div class="card-cover-loading">${spinner}</div></div>`;
 }
 
+async function loadCoverForElement(id, name, size) {
+  const el = document.getElementById(`cover-${id}`);
+  if (!el) return;
+  const url = await getBGGImage(name);
+  if (!el || !document.body.contains(el)) return;
+  if (url) {
+    if (size === 'row') {
+      el.innerHTML = `<img class="row-cover" src="${url}" alt="${name}" onerror="this.style.display='none'">`;
+    } else {
+      el.innerHTML = `<img class="card-cover" src="${url}" alt="${name}" onerror="this.innerHTML='<div class=\\'card-cover-placeholder\\'>🎲</div>'">`;
+    }
+  } else {
+    if (size === 'row') {
+      el.innerHTML = `<div class="row-cover-placeholder">🎲</div>`;
+    } else {
+      el.innerHTML = `<div class="card-cover-placeholder">🎲</div>`;
+    }
+  }
+}
+
+// ── RENDER ───────────────────────────────────────────────────
 function rowHTML(g) {
+  const bgg = g.bgg_rating ? `<span class="row-bgg">★ ${parseFloat(g.bgg_rating).toFixed(1)}</span>` : '';
+  const cached = imgCache[g.name] || sessionStorage.getItem('bgg_' + g.name);
   return `<div class="game-row${g.favorit?' favorit':''}" onclick="openPanel(${g.id})">
-    <div class="row-title">${g.name}</div>
-    <div class="row-verlag">${g.verlag||''}</div>
+    ${coverWrapHTML(g.id, g.name, 'row')}
+    <div class="row-info">
+      <div class="row-title">${g.name}</div>
+      <div class="row-sub">
+        <span>${g.verlag||''}</span>
+        ${g.serie ? `<span class="dot">·</span><span>${g.serie}</span>` : ''}
+      </div>
+    </div>
     <div class="row-tags">${genreBadge(g.genre)}${typBadge(g.typ)}</div>
+    ${bgg}
     <div class="row-icons">
       <button class="icon-btn${g.favorit?' active-fav':''}" onclick="event.stopPropagation();toggleFav(${g.id})" title="Favorit">★</button>
       <button class="icon-btn${g.gespielt?' active-played':''}" onclick="event.stopPropagation();togglePlayed(${g.id})" title="Gespielt">✓</button>
@@ -161,17 +238,32 @@ function rowHTML(g) {
   </div>`;
 }
 
+function cardHTML(g) {
+  const bgg = g.bgg_rating ? `<div class="bgg-badge" style="font-size:10px;color:var(--amber);font-weight:600;margin-top:4px">★ ${parseFloat(g.bgg_rating).toFixed(1)}</div>` : '';
+  return `<div class="game-card${g.favorit?' favorit':''}" onclick="openPanel(${g.id})">
+    <div class="card-icons">
+      <button class="icon-btn${g.favorit?' active-fav':''}" onclick="event.stopPropagation();toggleFav(${g.id})" title="Favorit">★</button>
+      <button class="icon-btn${g.gespielt?' active-played':''}" onclick="event.stopPropagation();togglePlayed(${g.id})" title="Gespielt">✓</button>
+    </div>
+    ${coverWrapHTML(g.id, g.name, 'card')}
+    <div class="card-body">
+      <div class="card-title">${g.name}</div>
+      <div class="card-meta">${genreBadge(g.genre)}${typBadge(g.typ)}</div>
+      <div class="card-verlag">${g.verlag||''}</div>
+      ${bgg}
+    </div>
+  </div>`;
+}
+
 function renderGames(data) {
   const el = document.getElementById('game-container');
   document.getElementById('view-label').textContent = `${data.length} Spiel${data.length!==1?'e':''}`;
-  if (!data.length) {
-    el.innerHTML = `<div class="empty"><p>Keine Spiele gefunden.</p></div>`;
-    return;
-  }
-  if (layout === 'grid') {
-    el.innerHTML = `<div class="game-grid">${data.map(cardHTML).join('')}</div>`;
-  } else if (layout === 'list') {
+  if (!data.length) { el.innerHTML = `<div class="empty">Keine Spiele gefunden.</div>`; return; }
+
+  if (layout === 'list') {
     el.innerHTML = `<div class="game-list">${data.map(rowHTML).join('')}</div>`;
+  } else if (layout === 'grid') {
+    el.innerHTML = `<div class="game-grid">${data.map(cardHTML).join('')}</div>`;
   } else {
     const groups = {};
     data.forEach(g => { const k = g.serie||'__'; if(!groups[k]) groups[k]=[]; groups[k].push(g); });
@@ -179,17 +271,34 @@ function renderGames(data) {
     const einzel = groups['__']||[];
     let html = '';
     serieKeys.forEach(k => {
-      html += `<div class="group-section"><div class="group-heading">${k} <span class="gh-count">${groups[k].length} Titel</span></div><div class="game-grid">${groups[k].map(cardHTML).join('')}</div></div>`;
+      html += `<div class="group-section"><div class="group-heading">${k} <span class="gh-count">${groups[k].length} Titel</span></div><div class="game-list">${groups[k].map(rowHTML).join('')}</div></div>`;
     });
     if (einzel.length) {
-      html += `<div class="group-section"><div class="group-heading">Einzeltitel <span class="gh-count">${einzel.length} Spiele</span></div><div class="game-grid">${einzel.map(cardHTML).join('')}</div></div>`;
+      html += `<div class="group-section"><div class="group-heading">Einzeltitel <span class="gh-count">${einzel.length} Spiele</span></div><div class="game-list">${einzel.map(rowHTML).join('')}</div></div>`;
     }
     el.innerHTML = html;
+  }
+
+  // Lazy load covers — throttled
+  const uncached = data.filter(g => !imgCache[g.name] && !sessionStorage.getItem('bgg_' + g.name));
+  let i = 0;
+  const size = layout === 'grid' ? 'card' : 'row';
+  function loadNext() {
+    if (i >= uncached.length) return;
+    const g = uncached[i++];
+    loadCoverForElement(g.id, g.name, size).then(() => setTimeout(loadNext, 80));
+  }
+  // Load first 20 immediately, rest with delay
+  const first = uncached.slice(0, 20);
+  first.forEach((g, idx) => setTimeout(() => loadCoverForElement(g.id, g.name, size), idx * 80));
+  if (uncached.length > 20) {
+    i = 20;
+    setTimeout(loadNext, 20 * 80 + 200);
   }
 }
 
 // ── DETAIL PANEL ─────────────────────────────────────────────
-function openPanel(id) {
+async function openPanel(id) {
   currentGameId = id;
   const g = games.find(x=>x.id===id);
   if (!g) return;
@@ -198,6 +307,21 @@ function openPanel(id) {
   document.getElementById('dp-played-btn').innerHTML = g.gespielt ? '✓ Als ungespielt' : '○ Als gespielt';
   document.getElementById('dp-bgg').value = g.bgg_rating || '';
   document.getElementById('dp-notes').value = g.notizen || '';
+
+  // Cover
+  const coverWrap = document.getElementById('dp-cover-wrap');
+  const cachedImg = imgCache[g.name] || sessionStorage.getItem('bgg_' + g.name);
+  if (cachedImg) {
+    coverWrap.innerHTML = `<img class="panel-cover" src="${cachedImg}" alt="${g.name}">`;
+  } else {
+    coverWrap.innerHTML = `<div class="panel-cover-placeholder">🎲</div>`;
+    getBGGImage(g.name).then(url => {
+      if (url && currentGameId === id) {
+        coverWrap.innerHTML = `<img class="panel-cover" src="${url}" alt="${g.name}">`;
+      }
+    });
+  }
+
   const rows = [
     ['Verlag', g.verlag||'–'], ['Serie', g.serie||'–'], ['Jahr', g.jahr||'–'],
     ['Spieleranzahl', g.spieleranzahl||'–'], ['Genre', g.genre||'–'],
@@ -206,6 +330,7 @@ function openPanel(id) {
   document.getElementById('dp-rows').innerHTML = rows.map(([l,v])=>
     `<div class="panel-row"><span class="pr-label">${l}</span><span class="pr-val">${v}</span></div>`
   ).join('');
+
   document.getElementById('panel-overlay').classList.add('open');
   document.getElementById('detail-panel').classList.add('open');
 }
@@ -254,7 +379,7 @@ async function saveBGGNotes() {
   g.bgg_rating = bgg; g.notizen = notes;
   setSyncStatus('ok');
   applyFilters();
-  toast('Gespeichert');
+  toast('Gespeichert ✓');
 }
 
 // ── ADD / EDIT / DELETE ───────────────────────────────────────
@@ -310,12 +435,12 @@ async function saveGame() {
     const { error } = await sb.from('spiele').update(payload).eq('id', editingId);
     if (error) { setSyncStatus('error'); toast('Fehler: '+error.message, true); btn.disabled=false; return; }
     Object.assign(games.find(x=>x.id===editingId), payload);
-    toast('Spiel aktualisiert');
+    toast('Spiel aktualisiert ✓');
   } else {
     const { data, error } = await sb.from('spiele').insert([payload]).select().single();
     if (error) { setSyncStatus('error'); toast('Fehler: '+error.message, true); btn.disabled=false; return; }
     games.push(data);
-    toast('Spiel hinzugefügt');
+    toast('Spiel hinzugefügt ✓');
   }
   setSyncStatus('ok');
   btn.disabled = false;
