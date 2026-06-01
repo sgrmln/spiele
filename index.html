@@ -1,19 +1,21 @@
 <!DOCTYPE html>
-<!-- v2 -->
 <html lang="de">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Spielesammlung</title>
-<link rel="stylesheet" href="style_v1.css">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header>
-  <div class="logo">Spiele<span>sammlung</span></div>
+  <div class="logo">
+    <span class="logo-icon">🎲</span>
+    Spiele<em>sammlung</em>
+  </div>
   <div class="search-wrap">
     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-    <input type="text" id="search" placeholder="Suche nach Titel, Verlag, Serie…" oninput="applyFilters()">
+    <input type="text" id="search" placeholder="Titel, Verlag oder Serie suchen…" oninput="applyFilters()">
   </div>
   <div class="header-right">
     <div class="sync-status">
@@ -22,8 +24,8 @@
     </div>
     <span class="stat-pill" id="stat-total">– Spiele</span>
     <button class="btn primary" onclick="openAdd()">
-      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-      Spiel hinzufügen
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+      Hinzufügen
     </button>
   </div>
 </header>
@@ -65,14 +67,17 @@
         <option value="neu">Zuletzt hinzugefügt</option>
       </select>
       <div class="view-tabs">
-        <button class="view-tab active" id="lt-grid" onclick="setLayout('grid',this)" title="Kacheln">
-          <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
-        </button>
         <button class="view-tab" id="lt-list" onclick="setLayout('list',this)" title="Liste">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1.5" fill="currentColor"/><circle cx="3" cy="12" r="1.5" fill="currentColor"/><circle cx="3" cy="18" r="1.5" fill="currentColor"/></svg>
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1.5" fill="currentColor"/><circle cx="3" cy="12" r="1.5" fill="currentColor"/><circle cx="3" cy="18" r="1.5" fill="currentColor"/></svg>
+          Liste
+        </button>
+        <button class="view-tab active" id="lt-grid" onclick="setLayout('grid',this)" title="Kacheln">
+          <svg width="13" height="13" fill="currentColor" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+          Kacheln
         </button>
         <button class="view-tab" id="lt-group" onclick="setLayout('group',this)" title="Serien">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="4" rx="1"/><rect x="2" y="10" width="20" height="4" rx="1"/><rect x="2" y="17" width="20" height="4" rx="1"/></svg>
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="4" rx="1"/><rect x="2" y="10" width="20" height="4" rx="1"/><rect x="2" y="17" width="20" height="4" rx="1"/></svg>
+          Serien
         </button>
       </div>
     </div>
@@ -85,6 +90,9 @@
 <!-- Detail Panel -->
 <div class="panel-overlay" id="panel-overlay" onclick="closePanel()"></div>
 <div class="detail-panel" id="detail-panel">
+  <div class="panel-cover-wrap" id="dp-cover-wrap">
+    <div class="panel-cover-placeholder">🎲</div>
+  </div>
   <div class="panel-header">
     <div class="panel-title" id="dp-title"></div>
     <button class="panel-close" onclick="closePanel()">
@@ -96,7 +104,7 @@
       <button class="btn" id="dp-fav-btn" onclick="toggleFavPanel()"></button>
       <button class="btn" id="dp-played-btn" onclick="togglePlayedPanel()"></button>
       <button class="btn" onclick="openEdit()">
-        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
         Bearbeiten
       </button>
     </div>
@@ -105,19 +113,19 @@
       <label>BGG-Rating</label>
       <div class="bgg-row">
         <input class="bgg-input" type="number" id="dp-bgg" min="1" max="10" step="0.1" placeholder="z.B. 7.8">
-        <span style="font-size:13px;color:var(--text2)">/ 10</span>
-        <button class="btn save-btn" onclick="saveBGGNotes()">Speichern</button>
+        <span style="font-size:13px;color:var(--gray-400)">/ 10</span>
+        <button class="btn" style="font-size:12px" onclick="saveBGGNotes()">Speichern</button>
       </div>
     </div>
     <div class="panel-notes" style="margin-top:14px">
       <label>Notizen</label>
-      <textarea id="dp-notes" placeholder="Eigene Notizen zum Spiel…" rows="4"></textarea>
-      <button class="btn save-btn" style="margin-top:8px;width:100%;justify-content:center" onclick="saveBGGNotes()">Notizen speichern</button>
+      <textarea id="dp-notes" placeholder="Eigene Notizen…" rows="4"></textarea>
+      <button class="btn" style="margin-top:8px;width:100%;justify-content:center;font-size:12px" onclick="saveBGGNotes()">Notizen speichern</button>
     </div>
   </div>
 </div>
 
-<!-- Add/Edit Modal -->
+<!-- Modal -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
   <div class="modal">
     <div class="modal-head">
@@ -170,9 +178,7 @@
       <div class="field"><label>Notizen</label><textarea id="f-notes" rows="3" placeholder="Eigene Notizen…"></textarea></div>
     </div>
     <div class="modal-footer">
-      <div class="delete-area">
-        <button class="btn danger" id="delete-btn" onclick="deleteGame()" style="display:none">Löschen</button>
-      </div>
+      <div class="delete-area"><button class="btn danger" id="delete-btn" onclick="deleteGame()" style="display:none">Löschen</button></div>
       <button class="btn" onclick="closeModal(null)">Abbrechen</button>
       <button class="btn primary" id="save-btn" onclick="saveGame()">Speichern</button>
     </div>
@@ -182,10 +188,10 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  const SUPABASE_URL = 'SUPABASE_URL_PLACEHOLDER';
-  const SUPABASE_ANON_KEY = 'SUPABASE_ANON_KEY_PLACEHOLDER';
+const SUPABASE_URL = 'SUPABASE_URL_PLACEHOLDER';
+const SUPABASE_ANON_KEY = 'SUPABASE_ANON_KEY_PLACEHOLDER';
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app_v1.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
