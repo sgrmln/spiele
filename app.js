@@ -6,7 +6,7 @@
 //           spieleranzahl, bgg_rating, notizen, created_at
 // ============================================================
 
-// Supabase-Client — Variablen kommen aus index.html
+// Supabase-Client — Variablen kommen aus index.html 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ── Globaler State ───────────────────────────────────────────
