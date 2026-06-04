@@ -6,8 +6,8 @@
 <title>Dieters Boardgames</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=2">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -29,10 +29,7 @@
       <span id="sync-label">Verbunden</span>
     </div>
     <span class="stat-pill" id="stat-total">– Spiele</span>
-    <button class="btn primary" onclick="openAdd()">
-      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-      Hinzufügen
-    </button>
+    <button class="btn primary" onclick="openAdd()">+ Hinzufügen</button>
   </div>
 </header>
 
@@ -71,7 +68,7 @@
       <select class="sort-select" id="sort" onchange="applyFilters()">
         <option value="az">A → Z</option>
         <option value="za">Z → A</option>
-        <option value="jahr">Jahrgang</option>
+        <option value="jahr">Jahr</option>
         <option value="bgg">BGG-Rating</option>
         <option value="serie">Serie / Gruppe</option>
         <option value="autor">Autor</option>
@@ -79,18 +76,9 @@
         <option value="neu">Zuletzt hinzugefügt</option>
       </select>
       <div class="view-tabs">
-        <button class="view-tab" id="lt-list" onclick="setLayout('list',this)" title="Liste">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1.5" fill="currentColor"/><circle cx="3" cy="12" r="1.5" fill="currentColor"/><circle cx="3" cy="18" r="1.5" fill="currentColor"/></svg>
-          Liste
-        </button>
-        <button class="view-tab active" id="lt-grid" onclick="setLayout('grid',this)" title="Kacheln">
-          <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
-          Kacheln
-        </button>
-        <button class="view-tab" id="lt-group" onclick="setLayout('group',this)" title="Serien">
-          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="4" rx="1"/><rect x="2" y="10" width="20" height="4" rx="1"/><rect x="2" y="17" width="20" height="4" rx="1"/></svg>
-          Serien
-        </button>
+        <button class="view-tab" id="lt-list" onclick="setLayout('list',this)">☰ Liste</button>
+        <button class="view-tab active" id="lt-grid" onclick="setLayout('grid',this)">⊞ Kacheln</button>
+        <button class="view-tab" id="lt-group" onclick="setLayout('group',this)">≡ Serien</button>
       </div>
     </div>
     <div id="game-container">
@@ -102,35 +90,29 @@
 <!-- Detail Panel -->
 <div class="panel-overlay" id="panel-overlay" onclick="closePanel()"></div>
 <div class="detail-panel" id="detail-panel">
-  <div class="panel-cover" id="dp-cover-wrap"></div>
   <div class="panel-header">
     <div class="panel-title" id="dp-title"></div>
-    <button class="panel-close" onclick="closePanel()">
-      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
-    </button>
+    <button class="panel-close" onclick="closePanel()">✕</button>
   </div>
   <div class="panel-body">
     <div class="panel-actions">
       <button class="btn" id="dp-fav-btn" onclick="toggleFavPanel()"></button>
       <button class="btn" id="dp-played-btn" onclick="togglePlayedPanel()"></button>
-      <button class="btn" onclick="openEdit()">
-        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
-        Bearbeiten
-      </button>
+      <button class="btn" onclick="openEdit()">✎ Bearbeiten</button>
     </div>
     <div id="dp-rows"></div>
     <div class="panel-notes">
       <label>BGG-Rating</label>
       <div class="bgg-row">
         <input class="bgg-input" type="number" id="dp-bgg" min="1" max="10" step="0.1" placeholder="z.B. 7.8">
-        <span style="font-size:13px;color:var(--gray-400)">/ 10</span>
-        <button class="btn" style="font-size:12px" onclick="saveBGGNotes()">Speichern</button>
+        <span>/ 10</span>
+        <button class="btn" onclick="saveBGGNotes()">Speichern</button>
       </div>
     </div>
     <div class="panel-notes" style="margin-top:14px">
       <label>Notizen</label>
       <textarea id="dp-notes" placeholder="Eigene Notizen…" rows="4"></textarea>
-      <button class="btn" style="margin-top:8px;width:100%;justify-content:center;font-size:12px" onclick="saveBGGNotes()">Notizen speichern</button>
+      <button class="btn" style="margin-top:8px;width:100%;justify-content:center" onclick="saveBGGNotes()">Notizen speichern</button>
     </div>
   </div>
 </div>
@@ -140,60 +122,44 @@
   <div class="modal">
     <div class="modal-head">
       <h2 id="modal-title">Spiel hinzufügen</h2>
-      <button class="panel-close" onclick="closeModal(null)">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
-      </button>
+      <button class="panel-close" onclick="closeModal(null)">✕</button>
     </div>
     <div class="modal-body">
       <div class="field"><label>Spielname *</label><input type="text" id="f-name" placeholder="z.B. Carcassonne"></div>
       <div class="field-row">
-        <div class="field"><label>Verlag</label><input type="text" id="f-verlag" placeholder="z.B. Hans im Glück"></div>
-        <div class="field"><label>Autor</label><input type="text" id="f-autor" placeholder="z.B. Klaus-Jürgen Wrede"></div>
+        <div class="field"><label>Verlag</label><input type="text" id="f-verlag"></div>
+        <div class="field"><label>Autor</label><input type="text" id="f-autor"></div>
       </div>
       <div class="field-row">
-        <div class="field"><label>Gruppe / Serie</label><input type="text" id="f-gruppe" placeholder="z.B. Carcassonne"></div>
-        <div class="field"><label>Jahr</label><input type="number" id="f-jahr" placeholder="z.B. 2000"></div>
+        <div class="field"><label>Gruppe / Serie</label><input type="text" id="f-gruppe"></div>
+        <div class="field"><label>Jahr</label><input type="number" id="f-jahr"></div>
       </div>
       <div class="field-row">
         <div class="field">
           <label>Genre</label>
           <select id="f-genre">
-            <option value="Familienspiel">Familienspiel</option>
-            <option value="Kennerspiel">Kennerspiel</option>
-            <option value="Expertenspiel">Expertenspiel</option>
-            <option value="Kinderspiel">Kinderspiel</option>
-            <option value="Partyspiel">Partyspiel</option>
-            <option value="Party">Party</option>
-            <option value="Kartenspiel">Kartenspiel</option>
-            <option value="Würfelspiel">Würfelspiel</option>
-            <option value="Roll &amp; Write">Roll &amp; Write</option>
-            <option value="Deckbuilding">Deckbuilding</option>
-            <option value="Escape">Escape</option>
-            <option value="Detektivspiel">Detektivspiel</option>
-            <option value="Deduktionsspiel">Deduktionsspiel</option>
-            <option value="Krimispiel">Krimispiel</option>
-            <option value="Zwei-Personen-Spiel">Zwei-Personen-Spiel</option>
-            <option value="Zweipersonenspiel">Zweipersonenspiel</option>
-            <option value="Puzzlespiel">Puzzlespiel</option>
-            <option value="Quiz">Quiz</option>
-            <option value="Einpersonenspiel">Einpersonenspiel</option>
+            <option>Familienspiel</option><option>Kennerspiel</option><option>Expertenspiel</option>
+            <option>Kinderspiel</option><option>Partyspiel</option><option>Party</option>
+            <option>Kartenspiel</option><option>Würfelspiel</option><option>Roll &amp; Write</option>
+            <option>Deckbuilding</option><option>Escape</option><option>Detektivspiel</option>
+            <option>Deduktionsspiel</option><option>Krimispiel</option><option>Zwei-Personen-Spiel</option>
+            <option>Zweipersonenspiel</option><option>Puzzlespiel</option><option>Quiz</option>
+            <option>Einpersonenspiel</option>
           </select>
         </div>
         <div class="field">
           <label>Typ</label>
           <select id="f-typ">
-            <option value="Grundspiel">Grundspiel</option>
-            <option value="Erweiterung">Erweiterung</option>
-            <option value="Print &amp; Play">Print &amp; Play</option>
+            <option>Grundspiel</option><option>Erweiterung</option><option>Print &amp; Play</option>
           </select>
         </div>
       </div>
-      <div class="field"><label>Spiel des Jahres / Auszeichnung</label><input type="text" id="f-sdj" placeholder="z.B. Spiel des Jahres 2001 (Gewinner)"></div>
+      <div class="field"><label>Auszeichnung</label><input type="text" id="f-sdj" placeholder="z.B. Spiel des Jahres 2001 (Gewinner)"></div>
       <div class="field-row">
-        <div class="field"><label>BGG-Rating</label><input type="number" id="f-bgg" placeholder="z.B. 7.8" min="1" max="10" step="0.1"></div>
+        <div class="field"><label>BGG-Rating</label><input type="number" id="f-bgg" min="1" max="10" step="0.1"></div>
         <div class="field"><label>Spieleranzahl</label><input type="text" id="f-spieler" placeholder="z.B. 2–5"></div>
       </div>
-      <div class="field"><label>Notizen</label><textarea id="f-notes" rows="3" placeholder="Eigene Notizen…"></textarea></div>
+      <div class="field"><label>Notizen</label><textarea id="f-notes" rows="3"></textarea></div>
     </div>
     <div class="modal-footer">
       <div class="delete-area"><button class="btn danger" id="delete-btn" onclick="deleteGame()" style="display:none">Löschen</button></div>
@@ -205,11 +171,12 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- !! HIER DEINE SUPABASE-DATEN EINTRAGEN !! -->
 <script>
-const SUPABASE_URL = 'SUPABASE_URL_PLACEHOLDER';
-const SUPABASE_ANON_KEY = 'SUPABASE_ANON_KEY_PLACEHOLDER';
+const SUPABASE_URL  = 'https://xuyriuldkqafjbnuhfxh.supabase.co';       // z.B. https://xuyriuldkqafjbnuhfxh.supabase.co
+const SUPABASE_KEY  = 'sb_publishable_x21N1AUHz7XbnGVNjSYAQQ_I286gEfG';   // eyJ...
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=2"></script>
+<script src="app.js"></script>
 </body>
 </html>
