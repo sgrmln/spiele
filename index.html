@@ -7,10 +7,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
- 
+
 <header>
   <div class="header-brand">
     <span class="brand-icon">♟</span>
@@ -35,7 +35,7 @@
     </button>
   </div>
 </header>
- 
+
 <div class="layout">
   <aside class="sidebar">
     <div class="sidebar-section">
@@ -64,7 +64,7 @@
       <div class="filter-group" id="sdj-filters"></div>
     </div>
   </aside>
- 
+
   <main class="main">
     <div class="view-bar">
       <span class="view-label" id="view-label">Lädt…</span>
@@ -98,7 +98,7 @@
     </div>
   </main>
 </div>
- 
+
 <!-- Detail Panel -->
 <div class="panel-overlay" id="panel-overlay" onclick="closePanel()"></div>
 <div class="detail-panel" id="detail-panel">
@@ -134,7 +134,7 @@
     </div>
   </div>
 </div>
- 
+
 <!-- Modal -->
 <div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
   <div class="modal">
@@ -168,7 +168,6 @@
             <option value="Würfelspiel">Würfelspiel</option>
             <option value="Roll &amp; Write">Roll &amp; Write</option>
             <option value="Deckbuilding">Deckbuilding</option>
-            <option value="Deckbuidling">Deckbuilding</option>
             <option value="Escape">Escape</option>
             <option value="Detektivspiel">Detektivspiel</option>
             <option value="Deduktionsspiel">Deduktionsspiel</option>
@@ -203,14 +202,14 @@
     </div>
   </div>
 </div>
- 
+
 <div class="toast" id="toast"></div>
- 
+
 <script>
 const SUPABASE_URL = 'https://xuyriuldkqafjbnuhfxh.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_x21N1AUHz7XbnGVNjSYAQQ_I286gEfG';
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js"></script>
+<script src="app.js?v=2"></script>
 </body>
 </html>
