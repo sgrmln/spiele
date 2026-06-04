@@ -373,4 +373,5 @@ function closeModal(e) {
 }
 
 // ── Start ─────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', loadGames);
+//window.addEventListener('DOMContentLoaded', loadGames);
+setTimeout(loadGames, 100);
