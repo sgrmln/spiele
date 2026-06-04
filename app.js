@@ -1,6 +1,8 @@
 // ============================================================
 //  Dieters Boardgames – app.js
-//  Neue Spalten: autor, gruppe, jahrgang, spiel_des_jahres, typ
+//  Spalten: name, verlag, autor, gruppe, genre, jahr,
+//           spiel_des_jahres, typ, favorit, gespielt,
+//           spieleranzahl, bgg_rating, notizen
 // ============================================================
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -11,11 +13,10 @@ let activeGenre = '';
 let activeTyp = '';
 let activeVerlag = '';
 let activeSdj = '';
-let layout = 'grid'; // Standard: Kacheln
+let layout = 'grid';
 let currentGameId = null;
 let editingId = null;
 
-// ── Icons für Kachel-Cover ───────────────────────────────────
 const COVER_ICONS = ['♟', '🎲', '♜', '♞', '🃏', '♛', '🎯', '♙'];
 function coverIcon(id) { return COVER_ICONS[id % COVER_ICONS.length]; }
 
@@ -39,12 +40,12 @@ async function loadGames() {
 function getFiltered() {
   const q = document.getElementById('search').value.toLowerCase().trim();
   return games.filter(g => {
-    if (activeViewFilter==='favoriten' && !g.favorit) return false;
-    if (activeViewFilter==='gespielt'  && !g.gespielt) return false;
-    if (activeViewFilter==='ungespielt'&& g.gespielt)  return false;
-    if (activeGenre  && g.genre   !== activeGenre)  return false;
-    if (activeTyp    && g.typ     !== activeTyp)     return false;
-    if (activeVerlag && g.verlag  !== activeVerlag)  return false;
+    if (activeViewFilter==='favoriten'  && !g.favorit)  return false;
+    if (activeViewFilter==='gespielt'   && !g.gespielt)  return false;
+    if (activeViewFilter==='ungespielt' &&  g.gespielt)  return false;
+    if (activeGenre  && g.genre  !== activeGenre)  return false;
+    if (activeTyp    && g.typ    !== activeTyp)    return false;
+    if (activeVerlag && g.verlag !== activeVerlag) return false;
     if (activeSdj === 'ausgezeichnet' && !g.spiel_des_jahres) return false;
     if (q && !g.name?.toLowerCase().includes(q)
           && !g.verlag?.toLowerCase().includes(q)
@@ -63,7 +64,7 @@ function getSorted(data) {
     if (s==='serie') return (a.gruppe||'zzz').localeCompare(b.gruppe||'zzz','de');
     if (s==='autor') return (a.autor||'').localeCompare(b.autor||'','de');
     if (s==='verlag')return (a.verlag||'').localeCompare(b.verlag||'','de');
-    if (s==='jahr')  return (parseInt(b.jahrgang)||0)-(parseInt(a.jahrgang)||0);
+    if (s==='jahr')  return (parseInt(b.jahr)||0)-(parseInt(a.jahr)||0);
     if (s==='neu')   return new Date(b.created_at||0)-new Date(a.created_at||0);
     return 0;
   });
@@ -91,10 +92,10 @@ function applyFilters() {
 }
 
 function updateCounts() {
-  document.getElementById('stat-total').textContent = `${games.length} Spiele`;
-  document.getElementById('cnt-alle').textContent   = games.length;
-  document.getElementById('cnt-fav').textContent    = games.filter(g=>g.favorit).length;
-  document.getElementById('cnt-played').textContent = games.filter(g=>g.gespielt).length;
+  document.getElementById('stat-total').textContent   = `${games.length} Spiele`;
+  document.getElementById('cnt-alle').textContent     = games.length;
+  document.getElementById('cnt-fav').textContent      = games.filter(g=>g.favorit).length;
+  document.getElementById('cnt-played').textContent   = games.filter(g=>g.gespielt).length;
   document.getElementById('cnt-unplayed').textContent = games.filter(g=>!g.gespielt).length;
 }
 
@@ -124,7 +125,7 @@ function updateSidebar() {
   renderGroup('typ-filters',    countMap('typ'),     activeTyp,    v=>activeTyp=v);
   renderGroup('verlag-filters', countMap('verlag'),  activeVerlag, v=>activeVerlag=v);
 
-  // SdJ filter
+  // Auszeichnung-Filter
   const sdjEl = document.getElementById('sdj-filters');
   sdjEl.innerHTML = '';
   const allSdj = document.createElement('button');
@@ -155,19 +156,6 @@ function typBadge(typ) {
   return `<span class="tag erw-tag">${typ}</span>`;
 }
 
-function sdjBadge(sdj) {
-  if (!sdj) return '';
-  // Shorten for display
-  const short = sdj
-    .replace('Spiel des Jahres','SdJ')
-    .replace('Kennerspiel des Jahres','KdJ')
-    .replace('Kinderspiel des Jahres','KiJ')
-    .replace(' (Gewinner)','★')
-    .replace(' (Nominiert)','◆')
-    .replace(' (Empfehlungsliste)','◇');
-  return `<span class="tag sdj-tag" title="${sdj}">🏆 ${short}</span>`;
-}
-
 // ── GRID CARD ─────────────────────────────────────────────────
 function cardHTML(g) {
   const bgg = g.bgg_rating ? `<div class="card-bgg">★ ${parseFloat(g.bgg_rating).toFixed(1)}</div>` : '';
@@ -182,7 +170,7 @@ function cardHTML(g) {
     <div class="card-body">
       <div class="card-title">${g.name}</div>
       <div class="card-meta">${genreBadge(g.genre)}${typBadge(g.typ)}</div>
-      <div class="card-sub">${[g.verlag, g.jahrgang ? g.jahrgang : ''].filter(Boolean).join(' · ')}</div>
+      <div class="card-sub">${[g.verlag, g.jahr||''].filter(Boolean).join(' · ')}</div>
       ${bgg}
     </div>
   </div>`;
@@ -201,11 +189,11 @@ function rowHTML(g) {
         <span>${g.verlag||''}</span>
         ${g.autor?`<span class="dot">·</span><span>${g.autor.split(',')[0].trim()}</span>`:''}
         ${g.gruppe?`<span class="dot">·</span><span>${g.gruppe}</span>`:''}
-        ${g.jahrgang?`<span class="dot">·</span><span>${g.jahrgang}</span>`:''}
+        ${g.jahr?`<span class="dot">·</span><span>${g.jahr}</span>`:''}
       </div>
     </div>
     <div class="row-tags">${genreBadge(g.genre)}${typBadge(g.typ)}</div>
-    ${g.spiel_des_jahres?`<span class="tag sdj-tag" title="${g.spiel_des_jahres}" style="font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis">🏆</span>`:''}
+    ${g.spiel_des_jahres?`<span class="tag sdj-tag" title="${g.spiel_des_jahres}">🏆</span>`:''}
     ${bgg}
     <div class="row-icons">
       <button class="icon-btn${g.favorit?' active-fav':''}" onclick="event.stopPropagation();toggleFav(${g.id})" title="Favorit">★</button>
@@ -225,7 +213,6 @@ function renderGames(data) {
   } else if (layout==='grid') {
     el.innerHTML = `<div class="game-grid">${data.map(cardHTML).join('')}</div>`;
   } else {
-    // GROUP by Gruppe/Serie
     const groups = {};
     data.forEach(g => {
       const k = g.gruppe || '__';
@@ -257,24 +244,22 @@ function openPanel(id) {
   const g = games.find(x=>x.id===id);
   if (!g) return;
 
-  // Cover — neutral grid pattern (no color/letter)
   document.getElementById('dp-cover-wrap').innerHTML = '';
-
   document.getElementById('dp-title').textContent = g.name;
   document.getElementById('dp-fav-btn').innerHTML = g.favorit ? '★ Favorit entfernen' : '☆ Als Favorit';
   document.getElementById('dp-played-btn').innerHTML = g.gespielt ? '✓ Als ungespielt' : '○ Als gespielt';
-  document.getElementById('dp-bgg').value = g.bgg_rating || '';
-  document.getElementById('dp-notes').value = g.notizen || '';
+  document.getElementById('dp-bgg').value   = g.bgg_rating || '';
+  document.getElementById('dp-notes').value = g.notizen    || '';
 
   const rows = [
-    ['Verlag',        g.verlag       || '–'],
-    ['Autor',         g.autor        || '–'],
-    ['Gruppe / Serie',g.gruppe       || '–'],
-    ['Jahrgang',      g.jahrgang     || '–'],
-    ['Genre',         g.genre        || '–'],
-    ['Typ',           g.typ          || '–'],
-    ['Auszeichnung',  g.spiel_des_jahres || '–'],
-    ['Spieleranzahl', g.spieleranzahl|| '–'],
+    ['Verlag',         g.verlag          || '–'],
+    ['Autor',          g.autor           || '–'],
+    ['Gruppe / Serie', g.gruppe          || '–'],
+    ['Jahr',           g.jahr            || '–'],
+    ['Genre',          g.genre           || '–'],
+    ['Typ',            g.typ             || '–'],
+    ['Auszeichnung',   g.spiel_des_jahres|| '–'],
+    ['Spieleranzahl',  g.spieleranzahl   || '–'],
   ];
 
   document.getElementById('dp-rows').innerHTML = rows.map(([l,v]) =>
@@ -291,8 +276,8 @@ function closePanel() {
   currentGameId = null;
 }
 
-async function toggleFavPanel()    { if(currentGameId){await toggleFav(currentGameId);   openPanel(currentGameId);} }
-async function togglePlayedPanel() { if(currentGameId){await togglePlayed(currentGameId);openPanel(currentGameId);} }
+async function toggleFavPanel()    { if(currentGameId){await toggleFav(currentGameId);    openPanel(currentGameId);} }
+async function togglePlayedPanel() { if(currentGameId){await togglePlayed(currentGameId); openPanel(currentGameId);} }
 
 async function toggleFav(id) {
   const g = games.find(x=>x.id===id);
@@ -319,19 +304,19 @@ async function saveBGGNotes() {
   const bgg   = document.getElementById('dp-bgg').value;
   const notes = document.getElementById('dp-notes').value;
   setSyncStatus('syncing');
-  const {error} = await sb.from('spiele').update({bgg_rating:bgg||null,notizen:notes}).eq('id',currentGameId);
+  const {error} = await sb.from('spiele').update({bgg_rating:bgg||null, notizen:notes}).eq('id',currentGameId);
   if(error){setSyncStatus('error');toast('Fehler: '+error.message,true);return;}
   const g = games.find(x=>x.id===currentGameId);
-  if(g){g.bgg_rating=bgg;g.notizen=notes;}
+  if(g){g.bgg_rating=bgg; g.notizen=notes;}
   setSyncStatus('ok'); applyFilters(); toast('Gespeichert ✓');
 }
 
-// ── MODAL ADD/EDIT ────────────────────────────────────────────
+// ── MODAL ─────────────────────────────────────────────────────
 function openAdd() {
   editingId = null;
   document.getElementById('modal-title').textContent = 'Spiel hinzufügen';
-  ['f-name','f-verlag','f-autor','f-gruppe','f-jahrgang','f-sdj','f-spieler','f-bgg','f-notes'].forEach(id=>{
-    document.getElementById(id).value='';
+  ['f-name','f-verlag','f-autor','f-gruppe','f-jahr','f-sdj','f-spieler','f-bgg','f-notes'].forEach(id=>{
+    document.getElementById(id).value = '';
   });
   document.getElementById('f-genre').value = 'Familienspiel';
   document.getElementById('f-typ').value   = 'Grundspiel';
@@ -343,18 +328,18 @@ function openEdit() {
   if(!currentGameId) return;
   const g = games.find(x=>x.id===currentGameId);
   editingId = currentGameId;
-  document.getElementById('modal-title').textContent = 'Spiel bearbeiten';
-  document.getElementById('f-name').value     = g.name            || '';
-  document.getElementById('f-verlag').value   = g.verlag          || '';
-  document.getElementById('f-autor').value    = g.autor           || '';
-  document.getElementById('f-gruppe').value   = g.gruppe          || '';
-  document.getElementById('f-jahrgang').value = g.jahrgang        || '';
-  document.getElementById('f-sdj').value      = g.spiel_des_jahres|| '';
-  document.getElementById('f-spieler').value  = g.spieleranzahl   || '';
-  document.getElementById('f-genre').value    = g.genre           || 'Familienspiel';
-  document.getElementById('f-typ').value      = g.typ             || 'Grundspiel';
-  document.getElementById('f-bgg').value      = g.bgg_rating      || '';
-  document.getElementById('f-notes').value    = g.notizen         || '';
+  document.getElementById('modal-title').textContent  = 'Spiel bearbeiten';
+  document.getElementById('f-name').value    = g.name             || '';
+  document.getElementById('f-verlag').value  = g.verlag           || '';
+  document.getElementById('f-autor').value   = g.autor            || '';
+  document.getElementById('f-gruppe').value  = g.gruppe           || '';
+  document.getElementById('f-jahr').value    = g.jahr             || '';
+  document.getElementById('f-sdj').value     = g.spiel_des_jahres || '';
+  document.getElementById('f-spieler').value = g.spieleranzahl    || '';
+  document.getElementById('f-genre').value   = g.genre            || 'Familienspiel';
+  document.getElementById('f-typ').value     = g.typ              || 'Grundspiel';
+  document.getElementById('f-bgg').value     = g.bgg_rating       || '';
+  document.getElementById('f-notes').value   = g.notizen          || '';
   document.getElementById('delete-btn').style.display = '';
   closePanel();
   document.getElementById('modal-overlay').classList.add('open');
@@ -365,16 +350,16 @@ async function saveGame() {
   if(!name){toast('Bitte Spielname eingeben',true);return;}
   const payload = {
     name,
-    verlag:          document.getElementById('f-verlag').value.trim()   || null,
-    autor:           document.getElementById('f-autor').value.trim()    || null,
-    gruppe:          document.getElementById('f-gruppe').value.trim()   || null,
-    jahrgang:        document.getElementById('f-jahrgang').value.trim() || null,
-    spiel_des_jahres:document.getElementById('f-sdj').value.trim()      || null,
-    spieleranzahl:   document.getElementById('f-spieler').value.trim()  || null,
-    genre:           document.getElementById('f-genre').value,
-    typ:             document.getElementById('f-typ').value,
-    bgg_rating:      document.getElementById('f-bgg').value             || null,
-    notizen:         document.getElementById('f-notes').value           || null,
+    verlag:           document.getElementById('f-verlag').value.trim()  || null,
+    autor:            document.getElementById('f-autor').value.trim()   || null,
+    gruppe:           document.getElementById('f-gruppe').value.trim()  || null,
+    jahr:             document.getElementById('f-jahr').value.trim()    || null,
+    spiel_des_jahres: document.getElementById('f-sdj').value.trim()     || null,
+    spieleranzahl:    document.getElementById('f-spieler').value.trim() || null,
+    genre:            document.getElementById('f-genre').value,
+    typ:              document.getElementById('f-typ').value,
+    bgg_rating:       document.getElementById('f-bgg').value            || null,
+    notizen:          document.getElementById('f-notes').value          || null,
   };
   const btn = document.getElementById('save-btn');
   btn.disabled = true; setSyncStatus('syncing');
