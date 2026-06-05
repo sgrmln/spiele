@@ -164,10 +164,10 @@ function cardHTML(g) {
   const bgg = g.bgg_rating ? `<div class="card-bgg">★ ${parseFloat(g.bgg_rating).toFixed(1)}</div>` : '';
   return `<div class="game-card${g.favorit?' favorit':''}" onclick="openPanel(${g.id})">
     <div class="card-cover"><span class="card-icon">${icon(g.id)}</span></div>
-    <div class="card-btns">
+    ${!READONLY ? `<div class="card-btns">
       <button class="icon-btn${g.favorit?' fav':''}" onclick="event.stopPropagation();toggleFav(${g.id})">★</button>
       <button class="icon-btn${g.gespielt?' played':''}" onclick="event.stopPropagation();togglePlayed(${g.id})">✓</button>
-    </div>
+    </div>` : ''}
     <div class="card-body">
       <div class="card-title">${g.name}</div>
       <div class="card-tags">${genreBadge(g.genre)}${typBadge(g.typ)}</div>
@@ -189,10 +189,10 @@ function rowHTML(g) {
     <div class="row-tags">${genreBadge(g.genre)}${typBadge(g.typ)}</div>
     ${g.spiel_des_jahres ? `<span class="tag tag-sdj" title="${g.spiel_des_jahres}">🏆</span>` : ''}
     ${bgg}
-    <div class="row-btns">
+    ${!READONLY ? `<div class="row-btns">
       <button class="icon-btn${g.favorit?' fav':''}" onclick="event.stopPropagation();toggleFav(${g.id})">★</button>
       <button class="icon-btn${g.gespielt?' played':''}" onclick="event.stopPropagation();togglePlayed(${g.id})">✓</button>
-    </div>
+    </div>` : ''}
   </div>`;
 }
 
@@ -226,8 +226,10 @@ function openPanel(id) {
   const g = games.find(x => x.id === id);
   if (!g) return;
   document.getElementById('dp-title').textContent      = g.name || '–';
-  document.getElementById('dp-fav-btn').textContent    = g.favorit  ? '★ Favorit entfernen' : '☆ Als Favorit';
-  document.getElementById('dp-played-btn').textContent = g.gespielt ? '✓ Als ungespielt'    : '○ Als gespielt';
+  if (!READONLY) {
+    document.getElementById('dp-fav-btn').textContent    = g.favorit  ? '★ Favorit entfernen' : '☆ Als Favorit';
+    document.getElementById('dp-played-btn').textContent = g.gespielt ? '✓ Als ungespielt'    : '○ Als gespielt';
+  }
   document.getElementById('dp-bgg').value   = g.bgg_rating || '';
   document.getElementById('dp-notes').value = g.notizen    || '';
   const rows = [
