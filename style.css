@@ -63,6 +63,7 @@ header{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:16p
 .card-tags{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:4px}
 .card-sub{font-size:11px;color:var(--g400);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .card-bgg{font-size:11px;font-weight:600;color:var(--amber);margin-top:3px}
+.card-sdj{font-size:13px;margin-top:3px}
 .game-list{display:flex;flex-direction:column;gap:2px}
 .game-row{display:flex;align-items:center;gap:10px;padding:9px 12px;background:#fff;border:1px solid var(--g200);border-radius:var(--r2);cursor:pointer;transition:background .1s}
 .game-row:hover{background:var(--cream)}
