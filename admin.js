@@ -173,6 +173,7 @@ function cardHTML(g) {
       <div class="card-title">${g.name}</div>
       <div class="card-tags">${genreBadge(g.genre)}${typBadge(g.typ)}</div>
       <div class="card-sub">${[g.verlag, g.jahr].filter(Boolean).join(' · ')}</div>
+      ${g.spiel_des_jahres ? `<div class="card-sdj" title="${g.spiel_des_jahres}">🏆</div>` : ''}
       ${bgg}
     </div>
   </div>`;
