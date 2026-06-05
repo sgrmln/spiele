@@ -23,7 +23,6 @@
   </div>
   <div class="header-right">
     <span class="stat-pill" id="stat-total">– Spiele</span>
-    <button class="btn primary" onclick="openAdd()">+ Hinzufügen</button>
   </div>
 </header>
 
@@ -33,9 +32,6 @@
       <h4>Ansicht</h4>
       <div class="filter-group">
         <button class="filter-btn active" id="vf-alle" onclick="setViewFilter('alle',this)">Alle <span class="count" id="cnt-alle">–</span></button>
-        <button class="filter-btn" id="vf-favoriten" onclick="setViewFilter('favoriten',this)">★ Favoriten <span class="count" id="cnt-fav">–</span></button>
-        <button class="filter-btn" id="vf-gespielt" onclick="setViewFilter('gespielt',this)">✓ Gespielt <span class="count" id="cnt-played">–</span></button>
-        <button class="filter-btn" id="vf-ungespielt" onclick="setViewFilter('ungespielt',this)">○ Ungespielt <span class="count" id="cnt-unplayed">–</span></button>
       </div>
     </div>
     <div class="sidebar-section"><h4>Typ</h4><div class="filter-group" id="typ-filters"></div></div>
@@ -66,7 +62,7 @@
   </main>
 </div>
 
-<!-- Detail Panel -->
+<!-- Detail Panel (nur lesen) -->
 <div class="panel-overlay" id="panel-overlay" onclick="closePanel()"></div>
 <div class="detail-panel" id="detail-panel">
   <div class="panel-header">
@@ -74,79 +70,14 @@
     <button class="panel-close" onclick="closePanel()">✕</button>
   </div>
   <div class="panel-body">
-    <div class="panel-actions">
-      <button class="btn" id="dp-fav-btn" onclick="toggleFavPanel()"></button>
-      <button class="btn" id="dp-played-btn" onclick="togglePlayedPanel()"></button>
-      <button class="btn" onclick="openEdit()">✎ Bearbeiten</button>
-    </div>
     <div id="dp-rows"></div>
-    <div class="panel-notes">
-      <label>BGG-Rating</label>
-      <div class="bgg-row">
-        <input class="bgg-input" type="number" id="dp-bgg" min="1" max="10" step="0.1" placeholder="z.B. 7.8">
-        <span>/ 10</span>
-        <button class="btn" onclick="saveBGGNotes()">Speichern</button>
-      </div>
-    </div>
-    <div class="panel-notes" style="margin-top:14px">
-      <label>Notizen</label>
-      <textarea id="dp-notes" rows="4"></textarea>
-      <button class="btn" style="margin-top:8px;width:100%;justify-content:center" onclick="saveBGGNotes()">Notizen speichern</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal -->
-<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
-  <div class="modal">
-    <div class="modal-head">
-      <h2 id="modal-title">Spiel hinzufügen</h2>
-      <button class="panel-close" onclick="closeModal(null)">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="field"><label>Spielname *</label><input type="text" id="f-name"></div>
-      <div class="field-row">
-        <div class="field"><label>Verlag</label><input type="text" id="f-verlag"></div>
-        <div class="field"><label>Autor</label><input type="text" id="f-autor"></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>Gruppe / Serie</label><input type="text" id="f-gruppe"></div>
-        <div class="field"><label>Jahr</label><input type="number" id="f-jahr"></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>Genre</label>
-          <select id="f-genre">
-            <option>Familienspiel</option><option>Kennerspiel</option><option>Expertenspiel</option>
-            <option>Kinderspiel</option><option>Partyspiel</option><option>Party</option>
-            <option>Kartenspiel</option><option>Würfelspiel</option><option>Roll &amp; Write</option>
-            <option>Deckbuilding</option><option>Escape</option><option>Detektivspiel</option>
-            <option>Deduktionsspiel</option><option>Krimispiel</option><option>Zwei-Personen-Spiel</option>
-            <option>Quiz</option><option>Einpersonenspiel</option>
-          </select>
-        </div>
-        <div class="field"><label>Typ</label>
-          <select id="f-typ"><option>Grundspiel</option><option>Erweiterung</option><option>Print &amp; Play</option></select>
-        </div>
-      </div>
-      <div class="field"><label>Auszeichnung</label><input type="text" id="f-sdj"></div>
-      <div class="field-row">
-        <div class="field"><label>BGG-Rating</label><input type="number" id="f-bgg" min="1" max="10" step="0.1"></div>
-        <div class="field"><label>Spieleranzahl</label><input type="text" id="f-spieler"></div>
-      </div>
-      <div class="field"><label>Notizen</label><textarea id="f-notes" rows="3"></textarea></div>
-    </div>
-    <div class="modal-footer">
-      <div class="delete-area"><button class="btn danger" id="delete-btn" onclick="deleteGame()" style="display:none">Löschen</button></div>
-      <button class="btn" onclick="closeModal(null)">Abbrechen</button>
-      <button class="btn primary" id="save-btn" onclick="saveGame()">Speichern</button>
-    </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<!-- Daten & App -->
 <script src="spiele.js"></script>
 <script src="app.js"></script>
+<script>const READONLY = true;</script>
 </body>
 </html>
